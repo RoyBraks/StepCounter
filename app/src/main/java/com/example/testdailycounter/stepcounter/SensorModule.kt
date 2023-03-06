@@ -1,4 +1,4 @@
-package com.example.testdailycounter
+package com.example.testdailycounter.stepcounter
 
 import android.app.Application
 import dagger.Module

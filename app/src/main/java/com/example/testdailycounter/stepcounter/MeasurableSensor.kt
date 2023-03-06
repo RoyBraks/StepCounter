@@ -1,4 +1,4 @@
-package com.example.testdailycounter
+package com.example.testdailycounter.stepcounter
 
 // hierin worden de functies voor de sensoren aangemaakt.
 
