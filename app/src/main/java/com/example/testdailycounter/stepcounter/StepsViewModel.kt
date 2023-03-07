@@ -7,9 +7,9 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
-// het viewmodel voor hilt. Hierin kun je de sensoren gebruiken voor data.
+// De viewmodel voor hilt. Hierin kun je de sensoren gebruiken voor data.
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class StepsViewModel @Inject constructor(
     StepCounter: MeasurableSensor
 ): ViewModel(){
 
