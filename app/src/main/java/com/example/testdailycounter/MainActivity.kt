@@ -1,43 +1,37 @@
 package com.example.testdailycounter
 
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.testdailycounter.datastore.StoreStepsToday
-
-import com.example.testdailycounter.googlefit.dailySteps
+import com.example.testdailycounter.datastore.StoreStepsButton
+import com.example.testdailycounter.googlefit.GetStepsFit
 import com.example.testdailycounter.stepcounter.StepsViewModel
 import com.example.testdailycounter.ui.theme.TestDailyCounterTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension
-import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.DataType
-import com.google.android.gms.fitness.data.Field
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 // main activity
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -72,7 +66,7 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 // data store Steps
-                val dataStore = StoreStepsToday(context)
+                val dataStore = StoreStepsButton(context)
 
                 // opgeslagen hoeveelheid steps
                 val savedSteps = dataStore.getSteps.collectAsState(initial = 0)
@@ -83,49 +77,309 @@ class MainActivity : ComponentActivity() {
                 // totale steps vanuit de viewmodel
                 val totalSteps = stepsViewModel.totalSteps
 
+                val getStepsClass = GetStepsFit()
                 // Daily Steps
                 val totalDailySteps = if (googleFitPermission) {
-                    dailySteps(this, fitnessOptions, account, this)
+                    getStepsClass.dailySteps(account, this).observeAsState()
                 } else {
                     null
                 }
 
-                var stepsRightNow by remember { mutableStateOf(0) }
+                // Steps Morning
+                val totalStepsMorning = if (googleFitPermission) {
+                    getStepsClass.morningSteps(account, this).observeAsState()
+                } else {
+                    null
+                }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                val progressValueDailySteps = getStepsClass.progressDailySteps.observeAsState(0.1F)
+                val animatedProgress by animateFloatAsState(
+                    targetValue = progressValueDailySteps.value,
+                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                )
 
-                ){
-                    Text(
-                        text = "$totalSteps",
-                        color = Color.White
-                    )
+                var stepsSaved by remember { mutableStateOf(0) }
 
-                    Text(
-                        text = "${totalDailySteps?.value}",
-                        color = Color.White
-                    )
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(text = "Fitness Tracker") },
+                            backgroundColor = Color.DarkGray
+                        )
+                    }
+                ) { padding ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                            .padding(padding),
+                        horizontalAlignment = Alignment.CenterHorizontally,
 
-                    Button(onClick = {
-                        stepsRightNow = totalSteps
-                        scope.launch {
-                            dataStore.saveSteps(stepsRightNow)
+                        ){
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 100.dp, bottom = 50.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(
+                                modifier = Modifier,
+                                onDraw = {
+                                    drawCircle(
+                                        color = Color(0xFF1A1A1A),
+                                        radius = 115.dp.toPx()
+                                    )
+                                    drawCircle(
+                                        color = Color.Black,
+                                        radius = 95.dp.toPx()
+                                    )
+                                }
+                            )
+                            CircularProgressIndicator(
+                                progress = animatedProgress,
+                                modifier = Modifier
+                                    .height(230.dp)
+                                    .width(230.dp),
+                                strokeWidth = 20.dp,
+                                color = Color.Cyan
+                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "You have taken",
+                                    color = Color.White.copy(alpha = 0.3f),
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "${totalDailySteps?.value}",
+                                    color = Color.White,
+                                    fontSize = 42.sp
+                                )
+                                Text(
+                                    text = "steps today",
+                                    color = Color.White.copy(alpha = 0.3f),
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
 
-                    }) {
-                        Text(text = "Click To Save Steps")
-                    }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(0.5f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "You have taken",
+                                    color = Color.White.copy(alpha = 0.3f)
+                                )
+                                Text(
+                                    text = "${totalStepsMorning?.value}",
+                                    color = Color.White,
+                                    fontSize = 30.sp
+                                )
 
+                                Text(
+                                    text = "before 12:00",
+                                    color = Color.White.copy(alpha = 0.3f)
+                                )
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .weight(0.5f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "You have taken",
+                                    color = Color.White.copy(alpha = 0.3f)
+                                )
+                                Text(
+                                    text = "$totalSteps",
+                                    color = Color.White,
+                                    fontSize = 30.sp
+                                )
+
+                                Text(
+                                    text = "since last reboot",
+                                    color = Color.White.copy(alpha = 0.3f)
+                                )
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Saved steps",
+                                color = Color.White.copy(alpha = 0.3F)
+                            )
+                            Text(
+                                text = "${savedSteps.value}",
+                                color = Color.White
+                            )
+
+                        }
+
+                        Button(
+                            onClick = {
+                                stepsSaved = totalSteps
+                                scope.launch {
+                                    dataStore.saveSteps(stepsSaved)
+                                }
+                            }
+                        ) {
+                            Text(text = "Click To Save Steps")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun DefaultPreview(){
+
+
+    val getStepsClass = GetStepsFit()
+    val progressValueDailySteps = getStepsClass.progressDailySteps.observeAsState(0.1F)
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressValueDailySteps.value,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "Fitness Tracker") },
+                backgroundColor = Color.DarkGray
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(padding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+
+        ){
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 100.dp, bottom = 50.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(
+                    modifier = Modifier,
+                    onDraw = {
+                        drawCircle(
+                            color = Color(0xFF1A1A1A),
+                            radius = 115.dp.toPx()
+                        )
+                        drawCircle(
+                            color = Color.Black,
+                            radius = 95.dp.toPx()
+                        )
+                    }
+                )
+                CircularProgressIndicator(
+                    progress = animatedProgress,
+                    modifier = Modifier
+                        .height(230.dp)
+                        .width(230.dp),
+                    strokeWidth = 20.dp,
+                    color = Color.Cyan
+                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = "${savedSteps.value}",
-                        color = Color.White
+                        text = "You have taken",
+                        color = Color.White.copy(alpha = 0.3f),
+                        fontSize = 14.sp
+                    )
+                    Text(text = "1000", color = Color.White, fontSize = 42.sp)
+                    Text(
+                        text = "steps today",
+                        color = Color.White.copy(alpha = 0.3f),
+                        fontSize = 14.sp
                     )
                 }
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 100.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(0.5f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "You have taken",
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+                    Text(
+                        text = "1000",
+                        color = Color.White,
+                        fontSize = 30.sp
+                    )
+
+                    Text(
+                        text = "before 12:00",
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(0.5f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "You have taken",
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+                    Text(
+                        text = "1000",
+                        color = Color.White,
+                        fontSize = 30.sp
+                    )
+
+                    Text(
+                        text = "since last reboot",
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+                }
+            }
+
+            Button(
+                onClick = {
+                    // TEST
+                }
+                ) {
+                Text(text = "Click To Save Steps")
+            }
+
+            Text(
+                text = "10000",
+                color = Color.White
+            )
         }
     }
 }
