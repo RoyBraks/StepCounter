@@ -1,21 +1,26 @@
 package com.example.testdailycounter
 
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +37,18 @@ import kotlinx.coroutines.launch
 // main activity
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) {isGranted: Boolean ->
+            if (isGranted) {
+                Log.i("Permission", "Granted")
+            } else {
+                Log.i("Permission", "Denied")
+            }
+
+        }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,8 +72,19 @@ class MainActivity : ComponentActivity() {
             googleFitPermission = true
         }
 
+        val requestPermission =
+                RequestPermissions(
+                    context = this,
+                    this,
+                    requestPermissionLauncher,
+                    permissionType = android.Manifest.permission.ACTIVITY_RECOGNITION
+                )
+
+        requestPermission.requestPermission()
+
 
         setContent {
+
             TestDailyCounterTheme {
 
                 // context
@@ -106,7 +134,8 @@ class MainActivity : ComponentActivity() {
                             title = { Text(text = "Fitness Tracker") },
                             backgroundColor = Color.DarkGray
                         )
-                    }
+                    },
+                    bottomBar = {BottomBar()}
                 ) { padding ->
                     Column(
                         modifier = Modifier
@@ -120,7 +149,7 @@ class MainActivity : ComponentActivity() {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 100.dp, bottom = 50.dp),
+                                .padding(top = 50.dp, bottom = 50.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Canvas(
@@ -246,140 +275,29 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview
 @Composable
-fun DefaultPreview(){
-
-
-    val getStepsClass = GetStepsFit()
-    val progressValueDailySteps = getStepsClass.progressDailySteps.observeAsState(0.1F)
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = progressValueDailySteps.value,
-        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-    )
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "Fitness Tracker") },
-                backgroundColor = Color.DarkGray
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-
-        ){
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 100.dp, bottom = 50.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(
-                    modifier = Modifier,
-                    onDraw = {
-                        drawCircle(
-                            color = Color(0xFF1A1A1A),
-                            radius = 115.dp.toPx()
-                        )
-                        drawCircle(
-                            color = Color.Black,
-                            radius = 95.dp.toPx()
-                        )
-                    }
+fun BottomBar() {
+    val context = LocalContext.current
+    val selectedIndex = remember { mutableStateOf(0) }
+    BottomNavigation {
+        BottomNavigationItem(
+            icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Home") },
+            label = { Text(text = "Home") },
+            selected = (selectedIndex.value == 0),
+            onClick = {
+                selectedIndex.value = 0
+            })
+        BottomNavigationItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Camera,
+                    contentDescription = "Camera"
                 )
-                CircularProgressIndicator(
-                    progress = animatedProgress,
-                    modifier = Modifier
-                        .height(230.dp)
-                        .width(230.dp),
-                    strokeWidth = 20.dp,
-                    color = Color.Cyan
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "You have taken",
-                        color = Color.White.copy(alpha = 0.3f),
-                        fontSize = 14.sp
-                    )
-                    Text(text = "1000", color = Color.White, fontSize = 42.sp)
-                    Text(
-                        text = "steps today",
-                        color = Color.White.copy(alpha = 0.3f),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 100.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "You have taken",
-                        color = Color.White.copy(alpha = 0.3f)
-                    )
-                    Text(
-                        text = "1000",
-                        color = Color.White,
-                        fontSize = 30.sp
-                    )
-
-                    Text(
-                        text = "before 12:00",
-                        color = Color.White.copy(alpha = 0.3f)
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "You have taken",
-                        color = Color.White.copy(alpha = 0.3f)
-                    )
-                    Text(
-                        text = "1000",
-                        color = Color.White,
-                        fontSize = 30.sp
-                    )
-
-                    Text(
-                        text = "since last reboot",
-                        color = Color.White.copy(alpha = 0.3f)
-                    )
-                }
-            }
-
-            Button(
-                onClick = {
-                    // TEST
-                }
-                ) {
-                Text(text = "Click To Save Steps")
-            }
-
-            Text(
-                text = "10000",
-                color = Color.White
-            )
-        }
+            },
+            label = { Text(text = "Camera") },
+            selected = (selectedIndex.value == 1),
+            onClick = {
+                context.startActivity(Intent(context, CameraActivity::class.java))
+            })
     }
 }

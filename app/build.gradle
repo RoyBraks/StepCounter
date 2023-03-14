@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.testdailycounter"
-        minSdk 26
+        minSdk 29
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -69,6 +69,7 @@ dependencies {
 
     // Dagger hilt
     implementation "com.google.dagger:hilt-android:2.45"
+    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
     kapt 'com.google.dagger:hilt-android-compiler:2.45'
     kapt "androidx.hilt:hilt-compiler:1.0.0"
 
@@ -78,4 +79,15 @@ dependencies {
     // google fit
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
     implementation 'com.google.android.gms:play-services-fitness:21.1.0'
+
+    // CameraX
+    implementation "androidx.camera:camera-camera2:1.2.1"
+    implementation "androidx.camera:camera-lifecycle:1.2.1"
+    implementation "androidx.camera:camera-view:1.2.1"
+
+    // Icons
+    implementation "androidx.compose.material:material-icons-extended:$compose_version"
+
+    // Coil
+    implementation "io.coil-kt:coil-compose:1.4.0"
 }

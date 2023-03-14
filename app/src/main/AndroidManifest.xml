@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.SENSOR_COUNTER" />
 
+    <uses-feature android:name="android.hardware.camera.any" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:name=".stepcounter.SensorApp"
         android:allowBackup="true"
@@ -15,6 +18,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TestDailyCounter"
         tools:targetApi="31">
+        <activity
+            android:name=".CameraActivity"
+            android:exported="false"
+            android:label="@string/title_activity_camera"
+            android:theme="@style/Theme.TestDailyCounter" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

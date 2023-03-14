@@ -66,7 +66,7 @@ class GetStepsFit {
         val request = DataReadRequest.Builder()
             .aggregate(datasource)
             .bucketByTime(1, TimeUnit.DAYS)
-            .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(ZoneOffset.of("+00:00")), TimeUnit.SECONDS)
+            .setTimeRange(startTime.toEpochSecond(), endTime.toEpochSecond(ZoneOffset.of("+01:00")), TimeUnit.SECONDS)
             .build()
 
         Fitness.getHistoryClient(activity, account)
